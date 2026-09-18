@@ -1,0 +1,36 @@
+# 质量工具配置。运行时依赖仍在 requirements.txt / requirements-dev.txt 管理。
+# Python 版本见同目录 .python-version。
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F",  # pycodestyle / pyflakes
+  "I",       # isort：导入排序
+  "N",       # 命名规范
+  "UP",      # pyupgrade：新语法
+  "B",       # bugbear：常见坑
+  "C4",      # 推导式
+  "SIM",     # 简化
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"

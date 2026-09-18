@@ -19,3 +19,10 @@ build/
 node_modules/
 frontend/dist/
 .DS_Store
+
+# 测试 / 类型 / lint 工具缓存
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
