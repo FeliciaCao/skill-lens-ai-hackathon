@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 同一分支有新的推送时，取消尚未跑完的旧流水线，节省额度
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + type + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Format check (ruff)
+        run: ruff format --check .
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Type check (mypy)
+        run: mypy .
+
+      - name: Test (pytest)
+        run: pytest
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # 前端尚未脚手架化时自动跳过；出现 package.json 后本 job 自动生效
+      - name: Detect frontend project
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.exists == 'true'
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        if: steps.detect.outputs.exists == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.detect.outputs.exists == 'true'
+        run: npm run lint --if-present
+
+      - name: Build
+        if: steps.detect.outputs.exists == 'true'
+        run: npm run build --if-present
+
+      - name: Skipped notice
+        if: steps.detect.outputs.exists != 'true'
+        run: echo "frontend 尚未脚手架化（无 package.json），跳过前端检查。"
